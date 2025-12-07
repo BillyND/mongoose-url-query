@@ -28,7 +28,7 @@ export function getUrlFromRequest(input: RequestInput): string {
 // Constants
 // ============================================================================
 
-const FORCE_STRING_FIELDS = ["name", "id", "cancellationType"];
+const FORCE_STRING_FIELDS = ["name", "id"];
 const FORCE_EQUAL_FIELDS = ["id", "_id"];
 
 const SUPPORTED_OPERATORS: Record<string, FilterType[]> = {
@@ -338,17 +338,17 @@ export async function buildPipelineWithPercent(
 export function getFiltersFromUrl(
   request: RequestInput,
   tenantValue?: string,
-  tenantField = "shopDomain"
+  tenantField?: string
 ): FilterValue[] {
   const url = getUrlFromRequest(request);
   const { searchParams } = new URL(url);
   const filterStrings = searchParams
     .getAll("filter")
-    .filter((f) => !f.includes(tenantField));
+    .filter((f) => !tenantField || !f.includes(tenantField));
   const filters = parseFilters(filterStrings);
 
-  // Add tenant filter
-  if (tenantValue) {
+  // Add tenant filter if both field and value are provided
+  if (tenantField && tenantValue) {
     filters.unshift({
       field: tenantField,
       type: "string",

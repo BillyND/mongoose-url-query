@@ -1,6 +1,21 @@
 # mongo-query-toolkit
 
-Simple MongoDB aggregation utilities with filtering and pagination.
+A simple, URL-based MongoDB query toolkit for Node.js. Parse filters from URL query strings, build aggregation pipelines, and fetch paginated data with ease.
+
+**Perfect for:** REST APIs, Remix, Next.js, Hono, Express, and any framework that uses Request objects.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+- [API Reference](#api-reference)
+- [Filter System](#filter-system)
+- [Pipeline Customization](#pipeline-customization)
+- [Client-Side Usage](#client-side-usage)
+- [Response Format](#response-format)
+
+---
 
 ## Installation
 
@@ -10,93 +25,391 @@ npm install mongo-query-toolkit
 yarn add mongo-query-toolkit
 ```
 
-## Usage
+**Peer Dependency:** Requires `mongoose >= 6.0.0`
 
-### Fetch List with Pagination & Filtering
+---
+
+## Quick Start
 
 ```typescript
-import { fetchList } from "mongo-query-toolkit";
+import { fetchList, fetchItem } from "mongo-query-toolkit";
+import { ProductModel } from "./models";
 
-// Pass Request object directly (Remix, Next.js, Hono, etc.)
-const result = await fetchList(request, MyModel, {
-  tenantValue: shopDomain, // Optional: filter by tenant
-  limit: 50, // Optional: default 250
+// Fetch paginated list with filters from URL
+// URL: /api/products?filter=status|active&filter=price|amount|gt|100&page=2&limit=20
+const result = await fetchList(request, ProductModel);
+// => { page: 2, total: 150, items: [...20 products...] }
+
+// With multi-tenant support
+const result = await fetchList(request, ProductModel, {
+  tenantField: "organizationId",
+  tenantValue: currentOrg.id,
 });
-// => { page: 1, total: 100, items: [...] }
+// Automatically adds filter: { organizationId: currentOrg.id }
 
-// Or pass URL string
-const result = await fetchList(request.url, MyModel, {
-  tenantValue: shopDomain,
+// Fetch single item by ID
+// URL: /api/products?id=abc123
+const item = await fetchItem(request, ProductModel);
+// => { _id: "abc123", name: "Product", ... } or null
+```
+
+---
+
+## Core Concepts
+
+### 1. Request Input
+
+All functions accept either a **Request object** or **URL string**:
+
+```typescript
+// ✅ Pass Request directly (Remix, Next.js, Hono)
+await fetchList(request, Model);
+
+// ✅ Pass URL string
+await fetchList(request.url, Model);
+await fetchList("http://localhost/api?filter=status|active", Model);
+```
+
+### 2. Pipeline Execution Order
+
+Understanding the order helps you customize queries effectively:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  1. initialPipeline    →  Runs FIRST (setup, computed fields)       │
+│  2. URL Filters        →  Filters from ?filter=... params           │
+│  3. Count Total        →  Get total count for pagination            │
+│  4. Sort               →  Sort results                              │
+│  5. finalPipeline      →  Runs AFTER sort (lookups, projections)    │
+│  6. Pagination         →  $skip and $limit applied LAST             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## API Reference
+
+### `fetchList(request, model, options?, initialPipeline?, finalPipeline?)`
+
+Fetch a paginated list with filtering and sorting.
+
+**Parameters:**
+
+| Parameter         | Type                | Description                           |
+| ----------------- | ------------------- | ------------------------------------- |
+| `request`         | `Request \| string` | Request object or URL string          |
+| `model`           | `Model`             | Mongoose model                        |
+| `options`         | `FetchOptions`      | Configuration options                 |
+| `initialPipeline` | `PipelineStage[]`   | Pipeline stages to run BEFORE filters |
+| `finalPipeline`   | `PipelineStage[]`   | Pipeline stages to run AFTER sort     |
+
+**Options:**
+
+| Option        | Type              | Default       | Description                                      |
+| ------------- | ----------------- | ------------- | ------------------------------------------------ |
+| `limit`       | `number`          | `250`         | Max items per page                               |
+| `sortField`   | `string`          | `"updatedAt"` | Default sort field                               |
+| `sortDir`     | `"asc" \| "desc"` | `"desc"`      | Default sort direction                           |
+| `tenantField` | `string`          | -             | Field name for tenant/scope (e.g. "orgId")       |
+| `tenantValue` | `string`          | -             | Value to filter by (requires tenantField to set) |
+
+**Example:**
+
+```typescript
+// Basic usage (no multi-tenant)
+const result = await fetchList(request, ProductModel, {
+  limit: 50,
+  sortField: "createdAt",
+});
+
+// With multi-tenant filtering
+const result = await fetchList(request, ProductModel, {
+  tenantField: "organizationId",
+  tenantValue: currentOrg.id,
+  limit: 50,
 });
 ```
 
-### Fetch Single Item
+---
+
+### `fetchItem(request, model, initialPipeline?, finalPipeline?, id?)`
+
+Fetch a single item by ID.
+
+**Parameters:**
+
+| Parameter         | Type                | Description                                      |
+| ----------------- | ------------------- | ------------------------------------------------ |
+| `request`         | `Request \| string` | Request object or URL string                     |
+| `model`           | `Model`             | Mongoose model                                   |
+| `initialPipeline` | `PipelineStage[]`   | Pipeline stages before $match                    |
+| `finalPipeline`   | `PipelineStage[]`   | Pipeline stages after $match                     |
+| `id`              | `string \| number`  | Explicit ID (optional, defaults to `?id=` param) |
+
+**ID Matching:** Automatically matches against `id`, `_id` (as string, number, or ObjectId).
+
+**Example:**
 
 ```typescript
-import { fetchItem } from "mongo-query-toolkit";
+// From URL: /api/products?id=abc123
+const item = await fetchItem(request, ProductModel);
 
-// From URL query param (?id=123)
-const item = await fetchItem(request, MyModel);
-
-// Or with explicit ID
-const item = await fetchItem(request, MyModel, [], [], "123");
+// With explicit ID
+const item = await fetchItem(request, ProductModel, [], [], "abc123");
 ```
 
-### Filter Parsing
+---
+
+### `fetchItemBy(model, field, value, pipeline?)`
+
+Fetch a single item by any field value.
 
 ```typescript
-import {
-  parseFilter,
-  buildPipeline,
-  getFiltersFromUrl,
-} from "mongo-query-toolkit";
+// Find by email
+const user = await fetchItemBy(UserModel, "email", "john@example.com");
 
-// Parse single filter string
-const filter = parseFilter("status|string|eq|active");
-
-// Get filters from Request or URL
-const filters = getFiltersFromUrl(request, shopDomain);
-
-// Build MongoDB pipeline
-const pipeline = buildPipeline(filters);
+// Find by slug with lookup
+const post = await fetchItemBy(PostModel, "slug", "my-post", [
+  {
+    $lookup: {
+      from: "users",
+      localField: "authorId",
+      foreignField: "_id",
+      as: "author",
+    },
+  },
+]);
 ```
 
-### Multi-Model Union Query
+---
+
+### `fetchUnifiedList(request, models, options?)`
+
+Fetch from multiple collections using `$unionWith`, useful for combining different document types.
 
 ```typescript
-import { fetchUnifiedList } from "mongo-query-toolkit";
-
 const result = await fetchUnifiedList(
   request,
-  [{ model: BoosterModel }, { model: DealModel }],
-  { tenantValue: shopDomain }
+  [
+    { model: PostModel, initialPipeline: [...] },
+    { model: CommentModel, initialPipeline: [...] },
+  ],
+  {
+    tenantField: "workspaceId",
+    tenantValue: workspace.id,
+  }
 );
+// Each item will have `_sourceType` field indicating the source collection
 ```
 
-## Filter String Format
+---
+
+## Filter System
+
+### Filter String Format
+
+Filters are passed via URL query parameters: `?filter=field|type|operator|value`
+
+**Full Format:** `field|type|operator|value`
 
 ```
-field|type|operator|value
+?filter=status|string|eq|active
+?filter=price|amount|gt|100
+?filter=createdAt|date|range|2024-01-01~2024-12-31
 ```
+
+**Short Format:** `field|value` (auto-detects type and operator)
+
+```
+?filter=status|active        → string contains "active"
+?filter=price|100            → amount equals 100
+?filter=id|abc123            → id equals "abc123"
+?filter=tags|a,b,c           → array has any of [a,b,c]
+?filter=date|2024-01-01~2024-12-31  → date range
+```
+
+### Short Format Auto-Detection Rules
+
+When using short format, the library auto-detects type and operator based on these rules:
+
+**Type Detection:**
+
+| Value Pattern                           | Detected Type | Exception                      |
+| --------------------------------------- | ------------- | ------------------------------ |
+| `2024-01-01` or `2024-01-01~2024-12-31` | `date`        | -                              |
+| Only digits: `100`, `99.99`             | `amount`      | Unless field is `name` or `id` |
+| Contains comma: `a,b,c`                 | `array`       | -                              |
+| Everything else                         | `string`      | -                              |
+
+**Operator Detection:**
+
+| Condition              | Detected Operator  |
+| ---------------------- | ------------------ |
+| Field is `id` or `_id` | `eq` (exact match) |
+| Value contains `~`     | `range`            |
+| Value contains `,`     | `any`              |
+| Default                | `has` (contains)   |
 
 **Examples:**
 
-- `status|string|eq|active` - status equals "active"
-- `price|amount|gt|100` - price greater than 100
-- `createdAt|date|range|2024-01-01~2024-12-31` - date range
-- `tags|array|any|a,b,c` - has any of these tags
+```
+?filter=name|123       → type: string, operator: has (name is forced string)
+?filter=price|123      → type: amount, operator: has
+?filter=id|abc123      → type: string, operator: eq (id uses exact match)
+?filter=status|active  → type: string, operator: has
+```
 
-**Short format (auto-detect type):**
+> **Tip:** Use **Full Format** (`field|type|operator|value`) when you need explicit control over type and operator.
 
-- `status|active` - string contains "active"
-- `price|100` - amount equals 100
+### Supported Types
+
+| Type     | Description        | Example Values                        |
+| -------- | ------------------ | ------------------------------------- |
+| `string` | Text fields        | `"active"`, `"john"`                  |
+| `amount` | Numbers            | `100`, `99.99`                        |
+| `date`   | Dates (ISO format) | `2024-01-01`, `2024-01-01~2024-12-31` |
+| `array`  | Array fields       | `a,b,c` (comma-separated)             |
+
+### Supported Operators
+
+| Operator | Name         | Types                 | Example                               | MongoDB Equivalent                   |
+| -------- | ------------ | --------------------- | ------------------------------------- | ------------------------------------ |
+| `eq`     | Equals       | all                   | `status\|string\|eq\|active`          | `{ status: "active" }`               |
+| `ne`     | Not Equals   | string, amount, array | `status\|string\|ne\|deleted`         | `{ status: { $ne: "deleted" } }`     |
+| `has`    | Contains     | string                | `name\|string\|has\|john`             | `{ name: /john/i }`                  |
+| `nh`     | Not Contains | string                | `name\|string\|nh\|test`              | `{ name: { $not: /test/i } }`        |
+| `any`    | In Array     | string, array         | `status\|array\|any\|a,b,c`           | `{ status: { $in: ["a","b","c"] } }` |
+| `none`   | Not In Array | string, array         | `status\|array\|none\|x,y`            | `{ status: { $nin: ["x","y"] } }`    |
+| `range`  | Between      | date, amount          | `price\|amount\|range\|10~100`        | `{ price: { $gte: 10, $lte: 100 } }` |
+| `lt`     | Less Than    | amount                | `price\|amount\|lt\|100`              | `{ price: { $lt: 100 } }`            |
+| `gt`     | Greater Than | amount                | `price\|amount\|gt\|50`               | `{ price: { $gt: 50 } }`             |
+| `before` | Before Date  | date                  | `createdAt\|date\|before\|2024-01-01` | `{ createdAt: { $lt: Date } }`       |
+| `after`  | After Date   | date                  | `createdAt\|date\|after\|2024-01-01`  | `{ createdAt: { $gt: Date } }`       |
+
+---
+
+## Pipeline Customization
+
+### initialPipeline
+
+**What:** MongoDB aggregation stages that run **BEFORE** URL filters are applied.
+
+**Use Cases:**
+
+- Create computed/virtual fields for filtering
+- Add base $match conditions that always apply
+- $lookup to join related data before filtering
+
+**Example: Create searchable field**
+
+```typescript
+const result = await fetchList(request, ProductModel, { limit: 50 }, [
+  // Create a combined search field from multiple fields
+  {
+    $addFields: {
+      searchText: {
+        $concat: [
+          { $toString: "$_id" },
+          " ",
+          { $ifNull: ["$title", ""] },
+          " ",
+          { $ifNull: ["$name", ""] },
+          " ",
+          { $ifNull: ["$sku", ""] },
+        ],
+      },
+    },
+  },
+  // Always exclude deleted items
+  { $match: { deletedAt: null, isActive: true } },
+]);
+// Client can now filter: ?filter=searchText|string|has|keyword
+```
+
+### finalPipeline
+
+**What:** MongoDB aggregation stages that run **AFTER** sorting but **BEFORE** pagination.
+
+**Use Cases:**
+
+- $lookup to join related data (runs on sorted data, before limiting)
+- $project to shape the final output
+- $unwind to flatten arrays
+
+**Example: Add related data**
+
+```typescript
+const result = await fetchList(
+  request,
+  OrderModel,
+  { limit: 50 },
+  [], // no initialPipeline
+  [
+    // Lookup customer info
+    {
+      $lookup: {
+        from: "customers",
+        localField: "customerId",
+        foreignField: "_id",
+        as: "customer",
+      },
+    },
+    { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+    // Shape output
+    {
+      $project: {
+        _id: 1,
+        orderNumber: 1,
+        total: 1,
+        status: 1,
+        customerName: "$customer.name",
+        customerEmail: "$customer.email",
+      },
+    },
+  ]
+);
+```
+
+### Combined Example
+
+```typescript
+const result = await fetchList(
+  request,
+  ProductModel,
+  {
+    tenantField: "storeId",
+    tenantValue: currentStore.id,
+    limit: 20,
+    sortField: "createdAt",
+  },
+  // initialPipeline: runs FIRST
+  [
+    { $addFields: { searchText: { $concat: ["$title", " ", "$sku"] } } },
+    { $match: { isActive: true } },
+  ],
+  // finalPipeline: runs AFTER sort, BEFORE pagination
+  [
+    {
+      $lookup: {
+        from: "categories",
+        localField: "categoryId",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+  ]
+);
+```
+
+---
 
 ## Client-Side Usage
 
-### Building Filter URL
+### Building Filter URLs
 
 ```typescript
-// Helper function to build URL with filters
+// Helper function
 function buildQueryUrl(
   baseUrl: string,
   options: {
@@ -107,12 +420,10 @@ function buildQueryUrl(
   }
 ) {
   const params = new URLSearchParams();
-
   if (options.page) params.set("page", String(options.page));
   if (options.limit) params.set("limit", String(options.limit));
   if (options.sort) params.set("sort", options.sort);
   options.filters?.forEach((f) => params.append("filter", f));
-
   return `${baseUrl}?${params.toString()}`;
 }
 
@@ -123,22 +434,19 @@ const url = buildQueryUrl("/api/products", {
   sort: "price|desc",
   filters: [
     "status|string|eq|active",
-    "price|amount|gt|100",
+    "price|amount|range|100~500",
     "category|array|any|electronics,books",
   ],
 });
-// => /api/products?page=1&limit=20&sort=price|desc&filter=status|string|eq|active&filter=price|amount|gt|100&filter=category|array|any|electronics,books
 ```
 
 ### React Example
 
 ```tsx
-import { useState, useEffect } from "react";
-
 function ProductList() {
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -151,19 +459,15 @@ function ProductList() {
       .then((data) => setProducts(data.items));
   }, [page, filters]);
 
-  const addFilter = (field: string, value: string) => {
-    setFilters([...filters, `${field}|${value}`]);
-  };
-
   return (
     <div>
-      <button onClick={() => addFilter("status", "active")}>
-        Filter Active
+      <button onClick={() => setFilters([...filters, "status|string|eq|active"])}>
+        Active Only
       </button>
-      <button onClick={() => addFilter("price|amount|gt", "100")}>
-        Price > 100
+      <button onClick={() => setFilters([...filters, "price|amount|gt|100"])}>
+        Price > $100
       </button>
-      {/* ... */}
+      {/* Render products */}
     </div>
   );
 }
@@ -173,20 +477,15 @@ function ProductList() {
 
 ```tsx
 // app/routes/products.tsx
+import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
-import { json } from "@remix-run/node";
 import { fetchList } from "mongo-query-toolkit";
 
-// Server-side loader
 export async function loader({ request }: LoaderFunctionArgs) {
-  const result = await fetchList(request, ProductModel, {
-    tenantValue: shopDomain,
-    limit: 20,
-  });
+  const result = await fetchList(request, ProductModel, { limit: 20 });
   return json(result);
 }
 
-// Client-side component
 export default function Products() {
   const { items, total, page } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -197,43 +496,90 @@ export default function Products() {
     setSearchParams(params);
   };
 
-  const setPage = (newPage: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", String(newPage));
-    setSearchParams(params);
-  };
-
   return (
     <div>
-      <button onClick={() => addFilter("status|string|eq|active")}>
-        Active Only
-      </button>
-      <button onClick={() => addFilter("price|amount|range|100~500")}>
-        Price $100-$500
-      </button>
-
+      <p>Total: {total} items</p>
+      <button onClick={() => addFilter("status|active")}>Active</button>
       {items.map((item) => (
-        <div key={item.id}>{item.name}</div>
+        <div key={item._id}>{item.name}</div>
       ))}
-
-      <button onClick={() => setPage(page - 1)}>Prev</button>
-      <button onClick={() => setPage(page + 1)}>Next</button>
     </div>
   );
 }
 ```
 
-### Query Parameters Reference
+---
 
-| Parameter         | Description                   | Example                  |
-| ----------------- | ----------------------------- | ------------------------ |
-| `page`            | Page number (default: 1)      | `?page=2`                |
-| `limit`           | Items per page (default: 250) | `?limit=20`              |
-| `sort`            | Sort field and direction      | `?sort=price\|desc`      |
-| `filter`          | Filter string (can repeat)    | `?filter=status\|active` |
-| `id`              | Item ID for `fetchItem`       | `?id=123`                |
-| `export`          | Skip pagination               | `?export=true`           |
-| `countResultOnly` | Return only total count       | `?countResultOnly=true`  |
+## Response Format
+
+### fetchList / fetchUnifiedList
+
+```typescript
+interface FetchListResult<T> {
+  page: number;   // Current page number (1-indexed)
+  total: number;  // Total matching documents (before pagination)
+  items: T[];     // Array of documents for current page
+}
+
+// Example response
+{
+  page: 2,
+  total: 150,
+  items: [
+    { _id: "...", name: "Product 1", ... },
+    { _id: "...", name: "Product 2", ... },
+    // ... up to `limit` items
+  ]
+}
+```
+
+### fetchItem / fetchItemBy
+
+Returns the document or `null` if not found.
+
+```typescript
+// Found
+{ _id: "abc123", name: "Product", price: 99.99, ... }
+
+// Not found
+null
+```
+
+---
+
+## URL Query Parameters
+
+| Parameter         | Description                         | Example                                                |
+| ----------------- | ----------------------------------- | ------------------------------------------------------ |
+| `page`            | Page number (default: 1)            | `?page=2`                                              |
+| `limit`           | Items per page (max: options.limit) | `?limit=20`                                            |
+| `sort`            | Sort field and direction            | `?sort=price\|desc` or `?sort=createdAt\|asc`          |
+| `filter`          | Filter string (repeatable)          | `?filter=status\|active&filter=price\|amount\|gt\|100` |
+| `id`              | Item ID for fetchItem               | `?id=abc123`                                           |
+| `export`          | Skip pagination (return all)        | `?export=true`                                         |
+| `countResultOnly` | Return only count, no items         | `?countResultOnly=true`                                |
+
+---
+
+## TypeScript Support
+
+Full TypeScript support with generics:
+
+```typescript
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+}
+
+const result = await fetchList<Product>(request, ProductModel);
+// result.items is Product[]
+
+const item = await fetchItem<Product>(request, ProductModel);
+// item is Product | null
+```
+
+---
 
 ## License
 

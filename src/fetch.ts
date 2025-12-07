@@ -47,7 +47,7 @@ export async function fetchList<T = Record<string, unknown>>(
     limit: maxLimit = 250,
     sortField = "updatedAt",
     sortDir = "desc",
-    tenantField = "shopDomain",
+    tenantField,
     tenantValue,
   } = options;
 
@@ -132,7 +132,7 @@ export async function fetchUnifiedList<T = Record<string, unknown>>(
     limit: maxLimit = 250,
     sortField = "updatedAt",
     sortDir = "desc",
-    tenantField = "shopDomain",
+    tenantField,
     tenantValue,
   } = options;
 
@@ -148,7 +148,7 @@ export async function fetchUnifiedList<T = Record<string, unknown>>(
   const countOnly = !!searchParams.get("countResultOnly");
 
   const [baseModel, ...otherModels] = models;
-  const filters = getFiltersFromUrl(url, tenantValue, tenantField);
+  const filters = getFiltersFromUrl(url, tenantValue, tenantField ?? "");
   const filterPipeline = buildPipeline(filters);
 
   // Build base pipeline

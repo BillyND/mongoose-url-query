@@ -65,14 +65,14 @@ export interface MultiModelConfig {
 // ============================================================================
 
 export interface FetchOptions {
-  /** Default: 250 */
+  /** Max items per page. Default: 250 */
   limit?: number;
-  /** Default: 'updatedAt' */
+  /** Default sort field. Default: 'updatedAt' */
   sortField?: string;
-  /** Default: 'desc' */
+  /** Default sort direction. Default: 'desc' */
   sortDir?: "asc" | "desc";
-  /** Tenant field name, default: 'shopDomain' */
+  /** Field name for tenant/scope filtering (required if tenantValue is set) */
   tenantField?: string;
-  /** Tenant value to filter by */
+  /** Value to filter by tenant/scope field */
   tenantValue?: string;
 }
