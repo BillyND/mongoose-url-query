@@ -1,5 +1,9 @@
 # mongoose-url-query
 
+[![npm version](https://img.shields.io/npm/v/mongoose-url-query.svg)](https://www.npmjs.com/package/mongoose-url-query)
+[![npm downloads](https://img.shields.io/npm/dm/mongoose-url-query.svg)](https://www.npmjs.com/package/mongoose-url-query)
+[![license](https://img.shields.io/npm/l/mongoose-url-query.svg)](https://github.com/BillyND/mongoose-url-query/blob/main/LICENSE)
+
 A simple, URL-based Mongoose query toolkit for Node.js. Parse filters from URL query strings, build aggregation pipelines, and fetch paginated data with ease.
 
 **Perfect for:** REST APIs, Remix, Next.js, Hono, Express, and any framework that uses Request objects.
