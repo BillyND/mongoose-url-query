@@ -4,8 +4,16 @@
 
 import type { Model, PipelineStage } from "mongoose";
 import mongoose from "mongoose";
-import type { FetchListResult, FetchOptions, MultiModelConfig } from "./types";
-import { getFiltersFromUrl, buildPipeline, buildPipelineWithPercent } from "./filter";
+import type {
+  FetchListResult,
+  FetchOptions,
+  MultiModelConfig,
+} from "./types.js";
+import {
+  getFiltersFromUrl,
+  buildPipeline,
+  buildPipelineWithPercent,
+} from "./filter.js";
 
 const { ObjectId } = mongoose.Types;
 
@@ -41,7 +49,10 @@ export async function fetchList<T = Record<string, unknown>>(
   } = options;
 
   // Parse pagination
-  const limit = Math.min(Number(searchParams.get("limit") || maxLimit), maxLimit);
+  const limit = Math.min(
+    Number(searchParams.get("limit") || maxLimit),
+    maxLimit
+  );
   const page = Math.max(Number(searchParams.get("page") || 1), 1);
   const skip = (page - 1) * limit;
 
@@ -60,7 +71,9 @@ export async function fetchList<T = Record<string, unknown>>(
   const pipeline: PipelineStage[] = [...initialPipeline, ...filterPipeline];
 
   // Get total
-  const total = (await model.aggregate([...pipeline, { $count: "total" }]).exec())?.[0]?.total || 0;
+  const total =
+    (await model.aggregate([...pipeline, { $count: "total" }]).exec())?.[0]
+      ?.total || 0;
 
   if (countOnly) {
     return { page, total, items: [] };
@@ -74,10 +87,10 @@ export async function fetchList<T = Record<string, unknown>>(
       sortDirection?.toLowerCase() === "asc"
         ? 1
         : sortDirection?.toLowerCase() === "desc"
-          ? -1
-          : sortDir === "asc"
-            ? 1
-            : -1;
+        ? -1
+        : sortDir === "asc"
+        ? 1
+        : -1;
     pipeline.push({ $sort: { [field]: dir } });
   }
 
@@ -119,7 +132,10 @@ export async function fetchUnifiedList<T = Record<string, unknown>>(
     tenantValue,
   } = options;
 
-  const limit = Math.min(Number(searchParams.get("limit") || maxLimit), maxLimit);
+  const limit = Math.min(
+    Number(searchParams.get("limit") || maxLimit),
+    maxLimit
+  );
   const page = Math.max(Number(searchParams.get("page") || 1), 1);
   const skip = (page - 1) * limit;
   const sortParam = searchParams.get("sort");
@@ -157,7 +173,9 @@ export async function fetchUnifiedList<T = Record<string, unknown>>(
 
   // Get total
   const total =
-    (await baseModel.model.aggregate([...pipeline, { $count: "total" }]).exec())?.[0]?.total || 0;
+    (
+      await baseModel.model.aggregate([...pipeline, { $count: "total" }]).exec()
+    )?.[0]?.total || 0;
 
   if (countOnly) return { page, total, items: [] };
 
@@ -167,10 +185,10 @@ export async function fetchUnifiedList<T = Record<string, unknown>>(
     sortDirection?.toLowerCase() === "asc"
       ? 1
       : sortDirection?.toLowerCase() === "desc"
-        ? -1
-        : sortDir === "asc"
-          ? 1
-          : -1;
+      ? -1
+      : sortDir === "asc"
+      ? 1
+      : -1;
   pipeline.push({ $sort: { [field]: dir } });
 
   // Add pagination

@@ -5,7 +5,7 @@
  *
  * @example Basic Usage
  * ```ts
- * import { fetchList, fetchItem } from "@peakify/mongo-query-toolkit";
+ * import { fetchList, fetchItem } from "mongo-query-toolkit";
  *
  * // Fetch list with pagination & filtering
  * const result = await fetchList(request.url, MyModel, {
@@ -19,7 +19,7 @@
  *
  * @example Filter Parsing
  * ```ts
- * import { parseFilter, buildPipeline, getFiltersFromUrl } from "@peakify/mongo-query-toolkit";
+ * import { parseFilter, buildPipeline, getFiltersFromUrl } from "mongo-query-toolkit";
  *
  * // Parse filter string
  * const filter = parseFilter("status|string|eq|active");
@@ -41,7 +41,7 @@ export type {
   FetchListResult,
   FetchOptions,
   MultiModelConfig,
-} from "./types";
+} from "./types.js";
 
 // Filter utilities
 export {
@@ -50,7 +50,7 @@ export {
   buildPipeline,
   buildPipelineWithPercent,
   getFiltersFromUrl,
-} from "./filter";
+} from "./filter.js";
 
 // Fetch utilities
-export { fetchList, fetchUnifiedList, fetchItem, fetchItemBy } from "./fetch";
+export { fetchList, fetchUnifiedList, fetchItem, fetchItemBy } from "./fetch.js";

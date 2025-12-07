@@ -15,7 +15,7 @@ yarn add mongo-query-toolkit
 ### Fetch List with Pagination & Filtering
 
 ```typescript
-import { fetchList } from "@peakify/mongo-query-toolkit";
+import { fetchList } from "mongo-query-toolkit";
 
 const result = await fetchList(request.url, MyModel, {
   tenantValue: shopDomain, // Optional: filter by tenant
@@ -27,7 +27,7 @@ const result = await fetchList(request.url, MyModel, {
 ### Fetch Single Item
 
 ```typescript
-import { fetchItem } from "@peakify/mongo-query-toolkit";
+import { fetchItem } from "mongo-query-toolkit";
 
 // From URL query param (?id=123)
 const item = await fetchItem(request.url, MyModel);
@@ -39,7 +39,7 @@ const item = await fetchItem(request.url, MyModel, [], [], "123");
 ### Filter Parsing
 
 ```typescript
-import { parseFilter, buildPipeline, getFiltersFromUrl } from "@peakify/mongo-query-toolkit";
+import { parseFilter, buildPipeline, getFiltersFromUrl } from "mongo-query-toolkit";
 
 // Parse single filter string
 const filter = parseFilter("status|string|eq|active");
@@ -54,7 +54,7 @@ const pipeline = buildPipeline(filters);
 ### Multi-Model Union Query
 
 ```typescript
-import { fetchUnifiedList } from "@peakify/mongo-query-toolkit";
+import { fetchUnifiedList } from "mongo-query-toolkit";
 
 const result = await fetchUnifiedList(
   request.url,
@@ -84,4 +84,3 @@ field|type|operator|value
 ## License
 
 MIT
-# mongo-query-toolkit

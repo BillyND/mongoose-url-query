@@ -1,28 +1,46 @@
 {
   "name": "mongo-query-toolkit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple MongoDB aggregation utilities with filtering and pagination",
   "author": "Peakify",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "mongoose": ">=6.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "mongoose": "^8.0.0",
     "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "mongodb",
+    "mongoose",
+    "pagination",
+    "filter",
+    "aggregation",
+    "query"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peakify/mongo-query-toolkit"
   }
 }

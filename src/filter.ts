@@ -4,7 +4,7 @@
 
 import type { PipelineStage, Model } from "mongoose";
 import mongoose from "mongoose";
-import type { FilterValue, FilterType, BetweenOperatorValue } from "./types";
+import type { FilterValue, FilterType, BetweenOperatorValue } from "./types.js";
 
 const { ObjectId } = mongoose.Types;
 
@@ -96,7 +96,11 @@ export function parseFilter(param: string): FilterValue {
   }
 
   // Parse range value
-  if (operator === "range" && typeof value === "string" && value.includes("~")) {
+  if (
+    operator === "range" &&
+    typeof value === "string" &&
+    value.includes("~")
+  ) {
     const [from, to] = value.split("~", 2);
     value = { from, to };
   }
@@ -169,7 +173,11 @@ function buildMatch(filter: FilterValue): PipelineStage | null {
               $or: [
                 { id: v },
                 { id: Number(v) },
-                { _id: ObjectId.isValid(v as string) ? new ObjectId(v as string) : v },
+                {
+                  _id: ObjectId.isValid(v as string)
+                    ? new ObjectId(v as string)
+                    : v,
+                },
               ],
             },
           };
@@ -194,13 +202,20 @@ function buildMatch(filter: FilterValue): PipelineStage | null {
       if (type === "array") {
         const vals =
           typeof v === "string"
-            ? v.split(",").map((x) => (ObjectId.isValid(x) ? new ObjectId(x) : x))
+            ? v
+                .split(",")
+                .map((x) => (ObjectId.isValid(x) ? new ObjectId(x) : x))
             : [v];
         return { $match: { [field]: { $in: vals } } };
       }
       return {
         $match: {
-          [field]: { $regex: new RegExp(`^(${(v as string).split(",").join("|")})$`, "i") },
+          [field]: {
+            $regex: new RegExp(
+              `^(${(v as string).split(",").join("|")})$`,
+              "i"
+            ),
+          },
         },
       };
 
@@ -208,12 +223,18 @@ function buildMatch(filter: FilterValue): PipelineStage | null {
       if (type === "array") {
         const vals =
           typeof v === "string"
-            ? v.split(",").map((x) => (ObjectId.isValid(x) ? new ObjectId(x) : x))
+            ? v
+                .split(",")
+                .map((x) => (ObjectId.isValid(x) ? new ObjectId(x) : x))
             : [v];
         return { $match: { [field]: { $nin: vals } } };
       }
       return {
-        $match: { [field]: { $not: new RegExp(`^(${(v as string).split(",").join("|")})$`, "i") } },
+        $match: {
+          [field]: {
+            $not: new RegExp(`^(${(v as string).split(",").join("|")})$`, "i"),
+          },
+        },
       };
 
     case "range":
@@ -228,11 +249,15 @@ function buildMatch(filter: FilterValue): PipelineStage | null {
 
     case "lt":
     case "before":
-      return { $match: { [field]: { $lt: type === "date" ? (v as Date[])[0] : v } } };
+      return {
+        $match: { [field]: { $lt: type === "date" ? (v as Date[])[0] : v } },
+      };
 
     case "gt":
     case "after":
-      return { $match: { [field]: { $gt: type === "date" ? (v as Date[])[1] : v } } };
+      return {
+        $match: { [field]: { $gt: type === "date" ? (v as Date[])[1] : v } },
+      };
 
     default:
       return null;
@@ -273,9 +298,14 @@ export async function buildPipelineWithPercent(
       if (filter.percentOfResult) {
         const pct = parseFloat(String(filter.percentOfResult));
         const total =
-          (await model.aggregate([...pipeline, { $count: "total" }]).exec())?.[0]?.total || 0;
+          (
+            await model.aggregate([...pipeline, { $count: "total" }]).exec()
+          )?.[0]?.total || 0;
         if (total) {
-          const num = pct >= 0 ? Math.ceil((total / 100) * pct) : Math.floor((total / 100) * -pct);
+          const num =
+            pct >= 0
+              ? Math.ceil((total / 100) * pct)
+              : Math.floor((total / 100) * -pct);
           if (pct < 0) pipeline.push({ $skip: total - num });
           pipeline.push({ $limit: num });
         }
@@ -295,12 +325,19 @@ export function getFiltersFromUrl(
   tenantField = "shopDomain"
 ): FilterValue[] {
   const { searchParams } = new URL(url);
-  const filterStrings = searchParams.getAll("filter").filter((f) => !f.includes(tenantField));
+  const filterStrings = searchParams
+    .getAll("filter")
+    .filter((f) => !f.includes(tenantField));
   const filters = parseFilters(filterStrings);
 
   // Add tenant filter
   if (tenantValue) {
-    filters.unshift({ field: tenantField, type: "string", operator: "eq", value: tenantValue });
+    filters.unshift({
+      field: tenantField,
+      type: "string",
+      operator: "eq",
+      value: tenantValue,
+    });
   }
 
   return filters;
