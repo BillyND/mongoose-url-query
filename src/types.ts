@@ -1,5 +1,5 @@
 /**
- * @file Types for mongo-query-toolkit
+ * @file Types for mongoose-url-query
  */
 
 import type { PipelineStage, Model } from "mongoose";

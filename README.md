@@ -1,4 +1,4 @@
-# mongo-query-toolkit
+# mongoose-url-query
 
 A simple, URL-based MongoDB query toolkit for Node.js. Parse filters from URL query strings, build aggregation pipelines, and fetch paginated data with ease.
 
@@ -21,9 +21,9 @@ A simple, URL-based MongoDB query toolkit for Node.js. Parse filters from URL qu
 ## Installation
 
 ```bash
-npm install mongo-query-toolkit
+npm install mongoose-url-query
 # or
-yarn add mongo-query-toolkit
+yarn add mongoose-url-query
 ```
 
 **Peer Dependency:** Requires `mongoose >= 6.0.0`
@@ -33,7 +33,7 @@ yarn add mongo-query-toolkit
 ## Quick Start
 
 ```typescript
-import { fetchList, fetchItem } from "mongo-query-toolkit";
+import { fetchList, fetchItem } from "mongoose-url-query";
 import { ProductModel } from "./models";
 
 // Fetch paginated list with filters from URL
@@ -444,7 +444,7 @@ const result = await fetchList(
 Build a query URL with filters, pagination, and sorting. **Works in both browser and Node.js.**
 
 ```typescript
-import { buildQueryUrl } from "mongo-query-toolkit";
+import { buildQueryUrl } from "mongoose-url-query";
 
 const url = buildQueryUrl("/api/products", {
   page: 1,
@@ -474,7 +474,7 @@ const url = buildQueryUrl("/api/products", {
 ### React Example
 
 ```tsx
-import { buildQueryUrl } from "mongo-query-toolkit";
+import { buildQueryUrl } from "mongoose-url-query";
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -513,7 +513,7 @@ function ProductList() {
 // app/routes/products.tsx
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
-import { fetchList } from "mongo-query-toolkit";
+import { fetchList } from "mongoose-url-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const result = await fetchList(request, ProductModel, { limit: 20 });
@@ -643,7 +643,7 @@ const item = await fetchItem<Product>(request, ProductModel);
 
 ## Changelog
 
-See [GitHub Releases](https://github.com/BillyND/mongo-query-toolkit/releases) for version history and release notes.
+See [GitHub Releases](https://github.com/BillyND/mongoose-url-query/releases) for version history and release notes.
 
 ---
 

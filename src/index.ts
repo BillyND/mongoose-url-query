@@ -1,12 +1,12 @@
 /**
- * @file MongoDB Query Toolkit
+ * @file Mongoose Query Toolkit
  *
  * Simple, reusable utilities for MongoDB aggregation queries.
  * Works on both server (Node.js) and client (browser).
  *
  * @example Server-Side (Remix, Next.js, Express)
  * ```ts
- * import { fetchList, fetchItem } from "mongo-query-toolkit";
+ * import { fetchList, fetchItem } from "mongoose-url-query";
  *
  * // Fetch list with pagination & filtering
  * const result = await fetchList(request, MyModel, { limit: 50 });
@@ -17,7 +17,7 @@
  *
  * @example Client-Side (React, Vue, etc.)
  * ```ts
- * import { buildQueryUrl } from "mongo-query-toolkit";
+ * import { buildQueryUrl } from "mongoose-url-query";
  *
  * // Build URL with filters
  * const url = buildQueryUrl("/api/products", {
