@@ -1,5 +1,5 @@
 /**
- * @file Mongoose Query Toolkit
+ * @file Mongoose URL Query
  *
  * Simple, reusable utilities for MongoDB aggregation queries.
  * Works on both server (Node.js) and client (browser).

@@ -1,6 +1,6 @@
 # mongoose-url-query
 
-A simple, URL-based MongoDB query toolkit for Node.js. Parse filters from URL query strings, build aggregation pipelines, and fetch paginated data with ease.
+A simple, URL-based Mongoose query toolkit for Node.js. Parse filters from URL query strings, build aggregation pipelines, and fetch paginated data with ease.
 
 **Perfect for:** REST APIs, Remix, Next.js, Hono, Express, and any framework that uses Request objects.
 
