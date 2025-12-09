@@ -1,8 +1,8 @@
-# @billynd/mongoose-url-query
+# @peakify/mongoose-url-query
 
-[![npm version](https://img.shields.io/npm/v/@billynd/mongoose-url-query.svg)](https://www.npmjs.com/package/@billynd/mongoose-url-query)
-[![npm downloads](https://img.shields.io/npm/dm/@billynd/mongoose-url-query.svg)](https://www.npmjs.com/package/@billynd/mongoose-url-query)
-[![license](https://img.shields.io/npm/l/@billynd/mongoose-url-query.svg)](https://github.com/BillyND/mongoose-url-query/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@peakify/mongoose-url-query.svg)](https://www.npmjs.com/package/@peakify/mongoose-url-query)
+[![npm downloads](https://img.shields.io/npm/dm/@peakify/mongoose-url-query.svg)](https://www.npmjs.com/package/@peakify/mongoose-url-query)
+[![license](https://img.shields.io/npm/l/@peakify/mongoose-url-query.svg)](https://github.com/BillyND/mongoose-url-query/blob/main/LICENSE)
 
 A simple, URL-based Mongoose query toolkit for Node.js. Parse filters from URL query strings, build aggregation pipelines, and fetch paginated data with ease.
 
@@ -25,9 +25,9 @@ A simple, URL-based Mongoose query toolkit for Node.js. Parse filters from URL q
 ## Installation
 
 ```bash
-npm install @billynd/mongoose-url-query
+npm install @peakify/mongoose-url-query
 # or
-yarn add @billynd/mongoose-url-query
+yarn add @peakify/mongoose-url-query
 ```
 
 **Peer Dependency:** Requires `mongoose >= 6.0.0`
@@ -37,7 +37,7 @@ yarn add @billynd/mongoose-url-query
 ## Quick Start
 
 ```typescript
-import { fetchList, fetchItem } from "@billynd/mongoose-url-query";
+import { fetchList, fetchItem } from "@peakify/mongoose-url-query";
 import { ProductModel } from "./models";
 
 // Fetch paginated list with filters from URL
@@ -448,7 +448,7 @@ const result = await fetchList(
 Build a query URL with filters, pagination, and sorting. **Works in both browser and Node.js.**
 
 ```typescript
-import { buildQueryUrl } from "@billynd/mongoose-url-query";
+import { buildQueryUrl } from "@peakify/mongoose-url-query";
 
 const url = buildQueryUrl("/api/products", {
   page: 1,
@@ -478,7 +478,7 @@ const url = buildQueryUrl("/api/products", {
 ### React Example
 
 ```tsx
-import { buildQueryUrl } from "@billynd/mongoose-url-query";
+import { buildQueryUrl } from "@peakify/mongoose-url-query";
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -517,7 +517,7 @@ function ProductList() {
 // app/routes/products.tsx
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
-import { fetchList } from "@billynd/mongoose-url-query";
+import { fetchList } from "@peakify/mongoose-url-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const result = await fetchList(request, ProductModel, { limit: 20 });
@@ -642,14 +642,6 @@ const result = await fetchList<Product>(request, ProductModel);
 const item = await fetchItem<Product>(request, ProductModel);
 // item is Product | null
 ```
-
----
-
-## Changelog
-
-See [GitHub Releases](https://github.com/BillyND/mongoose-url-query/releases) for version history and release notes.
-
----
 
 ## License
 

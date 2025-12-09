@@ -1,6 +1,6 @@
 {
-  "name": "@billynd/mongoose-url-query",
-  "version": "1.6.7",
+  "name": "@peakify/mongoose-url-query",
+  "version": "1.7.0",
   "description": "URL-based Mongoose query toolkit with filtering, pagination and aggregation",
   "author": "Peakify",
   "license": "MIT",
@@ -43,6 +43,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/BillyND/mongoose-url-query"
+    "url": "git+https://github.com/BillyND/mongoose-url-query.git"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
